@@ -1,5 +1,13 @@
+from dataclasses import dataclass
 from requests import get
 from requests.exceptions import ConnectionError, MissingSchema
+
+
+@dataclass(frozen=True)
+class Transfer:
+    sender: str
+    recipient: str
+    amount: int
 
 
 class RaidenEndpoint:
