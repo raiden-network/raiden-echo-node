@@ -1,4 +1,5 @@
 import logging
+from itertools import count
 from json import JSONDecodeError, loads
 from requests import get
 from requests.exceptions import RequestException
@@ -7,32 +8,60 @@ from time import sleep
 from logic import Payment, get_logic
 
 
-def get_content(response):
+def request(endpoint, field=None):
     try:
-        return loads(response.content)
+        response = get(endpoint)
+    except RequestException as exception:
+        raise RuntimeError(
+            f"Couldn't connect to endpoint node at {endpoint}."
+            f"\n\nRequest failed with: {str(exception)}"
+        )
+
+    try:
+        content = loads(response.content)
     except JSONDecodeError:
-        raise RuntimeError("Cannot parse response Invalid JSON")
+        raise RuntimeError("Invalid JSON in response.")
+
+    if field is not None and field not in content:
+        raise RuntimeError("Invalid answer from query to {query} (no field named {field})")
+    return content[field] if field is not None else content
 
 
 class RaidenEndpoint:
     def __init__(self, url):
         self.url = url
+        self._tokens = None
+        self._address = None
+        self.identifier = count(start=1)
 
-    def get_address(self):
-        try:
-            response = get(self.url + "/api/v1/address")
-        except RequestException as exception:
-            raise RuntimeError(
-                f"Couldn't connect to raiden node at {raiden_url}."
-                f"\n\nRequest failed with: {str(exception)}"
-            )
-        try:
-            return get_content(response)["our_address"]
-        except KeyError:
-            raise RuntimeError("Invalid answer from address query (no field named our_address)")
+    @property
+    def address(self):
+        if self._address is None:
+            self._address = request(self.url + "/api/v1/address", "our_address")
+            logging.info(f"Our Raiden address is {self._address}.")
+        return self._address
 
-    def get_transfers(self):
-        return []
+    @property
+    def tokens(self):
+        if self._tokens is None:
+            self._tokens = request(self.url + "/api/v1/tokens")
+            logging.info(f"Found {len(self._tokens)} registered tokens on the Raiden node.")
+        return self._tokens
+
+    def get_payments(self):
+        payments = []
+        for token in self.tokens:
+            payment_records = request(self.url + f"/api/v1/payments/{token}/{self.address}")
+            for record in payment_records:
+                payments.append(
+                    Payment(
+                        sender=record["sender"],
+                        recipient=self.address,
+                        token=token,
+                        amount=record["amount"],
+                    )
+                )
+        return payments
 
 
 class RaidenBot:
