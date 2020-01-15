@@ -2,7 +2,7 @@ from dataclasses import replace
 
 import pytest
 
-from logic import EchoLogic, Transfer
+from logic import EchoLogic, Payment
 
 
 @pytest.fixture
@@ -16,15 +16,15 @@ def make_address(i):
 
 def test_echo_logic_amount_multiple_of_three(echo_logic):
     address = make_address(1)
-    transfer = Transfer(sender=address, recipient=echo_logic.our_address, amount=0)
-    assert not echo_logic.handle_transfer(transfer)
-    assert not echo_logic.handle_transfer(replace(transfer, amount=4))
-    assert not echo_logic.handle_transfer(replace(transfer, recipient=make_address(2)))
+    token = make_address(1000)
+    payment = Payment(sender=address, recipient=echo_logic.our_address, amount=0, token=token)
+    assert not echo_logic.handle_payment(payment)
+    assert not echo_logic.handle_payment(replace(payment, amount=4))
+    assert not echo_logic.handle_payment(replace(payment, recipient=make_address(2)))
 
-    echo_transfers = echo_logic.handle_transfer(replace(transfer, amount=9))
-    assert echo_transfers
-    echo_transfer = echo_transfers[0]
-    assert echo_transfer.amount == 8
-    assert echo_transfer.sender == echo_logic.our_address
-    assert echo_transfer.recipient == address
-            
+    echo_payments = echo_logic.handle_payment(replace(payment, amount=9))
+    assert echo_payments
+    echo_payment = echo_payments[0]
+    assert echo_payment.amount == 8
+    assert echo_payment.sender == echo_logic.our_address
+    assert echo_payment.recipient == address

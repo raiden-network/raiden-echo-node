@@ -15,7 +15,7 @@ from raiden_bot import create_raiden_bot
      "--logic", default="echo", type=Choice(logic_choices), help="Logic the bot will implement"
 )
 def main(raiden_url, logic):
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     try:
         create_raiden_bot(raiden_url, logic).loop()
     except (RequestFailed, RuntimeError) as error:

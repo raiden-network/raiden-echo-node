@@ -4,7 +4,7 @@ from requests import get
 from requests.exceptions import RequestException
 from time import sleep
 
-from logic import Transfer, get_logic
+from logic import Payment, get_logic
 
 
 def get_content(response):
@@ -41,32 +41,26 @@ class RaidenBot:
         self.logic = logic
         self.poll_interval = poll_interval
 
-    @property
-    def address(self):
-        return self.logic.our_address
-
     def loop(self):
         while True:
-            transfers_in = self.endpoint.get_transfers()
-            transfers_out = self.logic.handle_transfers(transfers_in)
+            payments_in = self.endpoint.get_payments()
+            payments_out = self.logic.handle_payments(payments_in)
 
-            if transfers_in or transfers_out:
-                logging.info(f"Received {len(transfers_in)} transfers.")
-                logging.info(f"Issuing {len(transfers_out)} new transfers.")
+            if payments_in or payments_out:
+                logging.info(f"Received {len(payments_in)} transfers.")
+                logging.info(f"Issuing {len(payments_out)} new transfers.")
 
-            for transfer in transfers_out:
+            for transfer in payments_out:
                 self.endpoint.transfer(transfer)
 
             sleep(self.poll_interval)
 
 
-
 def create_raiden_bot(raiden_url, logic_class):
     endpoint = RaidenEndpoint(url=raiden_url)
-    logic = get_logic(logic_class, endpoint.get_address())
+    logic = get_logic(logic_class, endpoint.address)
     bot = RaidenBot(endpoint, logic)
 
     logging.info(f"Bot successfully created with raiden url {raiden_url}.")
-    logging.info(f"Found raiden address: {bot.address}")
 
     return bot
