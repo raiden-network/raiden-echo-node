@@ -27,6 +27,22 @@ def request(endpoint, field=None):
     return content[field] if field is not None else content
 
 
+def parse_received_payments(records):
+    payments = []
+    for record in records:
+        try:
+            if record["event"] == "EventPaymentReceivedSuccess":
+                payments.append(Payment(
+                    sender=record["initiator"],
+                    token=record["token_address"],
+                    amount=int(record["amount"]),
+                ))
+        except (KeyError, TypeError, ValueError) as error:
+            logging.error(f"Could not parse payment record: {error}")
+            logging.error(f"Record: {record}.")
+    return payments
+
+
 class RaidenEndpoint:
     def __init__(self, url):
         self.url = url
@@ -52,15 +68,7 @@ class RaidenEndpoint:
         payments = []
         for token in self.tokens:
             payment_records = request(self.url + f"/api/v1/payments/{token}/{self.address}")
-            for record in payment_records:
-                payments.append(
-                    Payment(
-                        sender=record["sender"],
-                        recipient=self.address,
-                        token=token,
-                        amount=record["amount"],
-                    )
-                )
+            payments.extend(parse_received_payments(payment_records))
         return payments
 
 

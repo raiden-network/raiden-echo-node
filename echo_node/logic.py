@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass(frozen=True)
 class Payment:
-    sender: str
-    recipient: str
     token: str
     amount: int
+    sender: Optional[str] = None
+    recipient: Optional[str] = None
 
 
 class EchoLogic:
@@ -15,16 +15,11 @@ class EchoLogic:
         self.our_address = our_address
 
     def handle_payment(self, payment: Payment) -> List[Payment]:
-        if payment.amount > 0 and payment.recipient == self.our_address:
+        if payment.amount > 0 and not payment.recipient:
             echo_amount = self._echo_amount(payment.amount, payment.sender)
             if echo_amount > 0:
                 return [
-                    Payment(
-                        sender=self.our_address,
-                        recipient=payment.sender,
-                        token=payment.token,
-                        amount=echo_amount
-                    )
+                    Payment(recipient=payment.sender, token=payment.token, amount=echo_amount)
                 ]
         return []
 
