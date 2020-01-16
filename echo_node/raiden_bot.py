@@ -1,8 +1,8 @@
 import logging
 from collections import defaultdict
 from itertools import count
-from json import JSONDecodeError, loads
-from requests import get
+from json import JSONDecodeError, dumps, loads
+from requests import get, post
 from requests.exceptions import RequestException
 from time import sleep
 
@@ -86,7 +86,22 @@ class RaidenEndpoint:
         return payments
 
     def issue_payment(self, payment):
-       pass
+        if payment.sender is not None and payment.sender != self.address:
+            logging.error(f"Wrong sender address in issued payment: {payment.sender}.")
+        try:
+            payload = dumps(dict(amount=payment.amount, identifier=next(self.identifier)))
+            response = post(
+                self.url + f"/api/v1/payments/{payment.token}/{payment.recipient}",
+                data=payload
+            )
+        except RequestException as exception:
+            logging.error(f"Payment request failed: {str(exception)}")
+        else:
+            if response.status_code != 200:
+                logging.error(
+                    f"Payment of {payment.amount} to {payment.recipient} failed: "
+                    f"{response.content} ({response.status_code})"
+                )
 
 
 class RaidenBot:
