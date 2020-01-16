@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from itertools import count
 from json import JSONDecodeError, loads
 from requests import get
@@ -8,9 +9,9 @@ from time import sleep
 from logic import Payment, get_logic
 
 
-def request(endpoint, field=None):
+def request(endpoint, field=None, **kwargs):
     try:
-        response = get(endpoint)
+        response = get(endpoint, params=kwargs)
     except RequestException as exception:
         raise RuntimeError(
             f"Couldn't connect to endpoint node at {endpoint}."
@@ -49,6 +50,7 @@ class RaidenEndpoint:
         self._tokens = None
         self._address = None
         self.identifier = count(start=1)
+        self.token_to_payment_offset = defaultdict(lambda: 0)
 
     @property
     def address(self):
@@ -64,12 +66,27 @@ class RaidenEndpoint:
             logging.info(f"Found {len(self._tokens)} registered tokens on the Raiden node.")
         return self._tokens
 
+    def _get_payment_records_for_token(self, token):
+        offset = self.token_to_payment_offset[token]
+        payment_records = request(self.url + f"/api/v1/payments/{token}", offset=offset)
+        self.token_to_payment_offset[token] += len(payment_records)
+        return payment_records
+
+    def initialize(self):
+        for token in self.tokens:
+            self._get_payment_records_for_token(token)
+        previous_payments = sum(self.token_to_payment_offset.values())
+        logging.info(f"Initializing: skipped {previous_payments} previous payments.")
+
     def get_payments(self):
         payments = []
         for token in self.tokens:
-            payment_records = request(self.url + f"/api/v1/payments/{token}/{self.address}")
+            payment_records = self._get_payment_records_for_token(token)
             payments.extend(parse_received_payments(payment_records))
         return payments
+
+    def issue_payment(self, payment):
+       pass
 
 
 class RaidenBot:
@@ -79,6 +96,7 @@ class RaidenBot:
         self.poll_interval = poll_interval
 
     def loop(self):
+        self.endpoint.initialize()
         while True:
             payments_in = self.endpoint.get_payments()
             payments_out = self.logic.handle_payments(payments_in)
@@ -87,8 +105,8 @@ class RaidenBot:
                 logging.info(f"Received {len(payments_in)} transfers.")
                 logging.info(f"Issuing {len(payments_out)} new transfers.")
 
-            for transfer in payments_out:
-                self.endpoint.transfer(transfer)
+            for payment in payments_out:
+                self.endpoint.issue_payment(payment)
 
             sleep(self.poll_interval)
 
