@@ -11,6 +11,21 @@ class Payment:
 
 
 class EchoLogic:
+    """
+    Logic class defining the Raiden echo node:
+
+    - Every received payment will be echoed with a payment of the same amount,
+      unless the amount is 7 or a multiple of 3.
+    - If the amount is a multiple of 3, the amount of the echo payment is one
+      less than the sent amount.
+    - If the amount is equal to 7, the sender enters the 'lottery'.
+      They will not receive a payment in return, unless they are the seventh
+      participant entering the lottery, in which case they receive an amount
+      of 49.
+    - If the amount is equal to 7 and the sender is already in the lottery,
+      they will receive a payment with the amount equal to the current number
+      of lottery participants.
+    """
     def __init__(self):
         self.lottery_participants = set()
 
