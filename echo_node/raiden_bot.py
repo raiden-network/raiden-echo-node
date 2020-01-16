@@ -128,7 +128,7 @@ class RaidenBot:
 
 def create_raiden_bot(raiden_url, logic_class):
     endpoint = RaidenEndpoint(url=raiden_url)
-    logic = get_logic(logic_class, endpoint.address)
+    logic = get_logic(logic_class)
     bot = RaidenBot(endpoint, logic)
 
     logging.info(f"Bot successfully created with raiden url {raiden_url}.")

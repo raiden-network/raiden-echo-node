@@ -11,8 +11,7 @@ class Payment:
 
 
 class EchoLogic:
-    def __init__(self, our_address):
-        self.our_address = our_address
+    def __init__(self):
         self.lottery_participants = set()
 
     def handle_payment(self, payment: Payment) -> List[Payment]:
@@ -54,7 +53,7 @@ _logic_classes = {"echo": EchoLogic}
 logic_choices = _logic_classes.keys()
 
 
-def get_logic(name, our_address):
+def get_logic(name):
     if name not in _logic_classes:
         raise RuntimeError("Unknown logic")
-    return _logic_classes[name](our_address)
+    return _logic_classes[name]()

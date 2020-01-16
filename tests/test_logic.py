@@ -5,7 +5,7 @@ from logic import EchoLogic, Payment
 
 @pytest.fixture
 def echo_logic():
-    return EchoLogic(our_address="0x000000000000000000000000000000000000ec50")
+    return EchoLogic()
 
 
 def make_address(i):
