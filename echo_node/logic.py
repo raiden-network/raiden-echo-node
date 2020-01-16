@@ -13,6 +13,7 @@ class Payment:
 class EchoLogic:
     def __init__(self, our_address):
         self.our_address = our_address
+        self.lottery_participants = set()
 
     def handle_payment(self, payment: Payment) -> List[Payment]:
         if payment.amount > 0 and not payment.recipient:
@@ -32,8 +33,19 @@ class EchoLogic:
     def _echo_amount(self, amount: int, sender: str) -> int:
         if amount % 3 == 0:
             return amount - 1
+        elif amount == 7:
+            participants = len(self.lottery_participants)
+            assert participants < 7
+            if sender in self.lottery_participants:
+                return participants
+            elif participants == 6:
+                self.lottery_participants.clear()
+                return 49
+            else:
+                self.lottery_participants.add(sender)
+                return 0
         else:
-            return 0
+            return amount
 
 
 _logic_classes = {"echo": EchoLogic}
