@@ -9,22 +9,36 @@ from time import sleep
 from logic import Payment, get_logic
 
 
+class RequestFailed(Exception):
+    def __str__(self):
+        return "Failed request."
+
+
 def request(endpoint, field=None, **kwargs):
     try:
         response = get(endpoint, params=kwargs)
     except RequestException as exception:
-        raise RuntimeError(
-            f"Couldn't connect to endpoint node at {endpoint}."
-            f"\n\nRequest failed with: {str(exception)}"
+        logging.error(
+            f"An exception occurred during the request to {endpoint}: {str(exception)}."
         )
+        raise RequestFailed()
+
+    if response.status_code >= 400:
+        logging.error(
+            f"Request to {endpoint} failed: {response.content} ({response.status_code})"
+        )
+        raise RequestFailed()
 
     try:
         content = loads(response.content)
     except JSONDecodeError:
-        raise RuntimeError("Invalid JSON in response.")
+        logging.error(f"Cannot proceed after request to {endpoint}: Invalid JSON in response.")
+        raise RequestFailed()
 
     if field is not None and field not in content:
-        raise RuntimeError("Invalid answer from query to {query} (no field named {field})")
+        logging.error(f"Invalid answer from query to {query} (no field named {field})")
+        raise RequestFailed()
+
     return content[field] if field is not None else content
 
 
@@ -81,8 +95,12 @@ class RaidenEndpoint:
     def get_payments(self):
         payments = []
         for token in self.tokens:
-            payment_records = self._get_payment_records_for_token(token)
-            payments.extend(parse_received_payments(payment_records))
+            try:
+                payment_records = self._get_payment_records_for_token(token)
+            except RequestFailed:
+                pass
+            else:
+                payments.extend(parse_received_payments(payment_records))
         return payments
 
     def issue_payment(self, payment):

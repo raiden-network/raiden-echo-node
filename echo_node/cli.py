@@ -4,7 +4,7 @@ from sys import exit
 from click import Choice, command, option
 
 from logic import logic_choices
-from raiden_bot import create_raiden_bot
+from raiden_bot import RequestFailed, create_raiden_bot
 
 
 @command()
