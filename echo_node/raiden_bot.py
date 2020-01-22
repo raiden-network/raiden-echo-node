@@ -42,14 +42,14 @@ def request(endpoint, field=None, **kwargs):
     return content[field] if field is not None else content
 
 
-def parse_received_payments(records):
+def parse_received_payments(records, token_address):
     payments = []
     for record in records:
         try:
             if record["event"] == "EventPaymentReceivedSuccess":
                 payments.append(Payment(
                     sender=record["initiator"],
-                    token=record["token_address"],
+                    token=token_address,
                     amount=int(record["amount"]),
                 ))
         except (KeyError, TypeError, ValueError) as error:
@@ -98,7 +98,7 @@ class RaidenEndpoint:
             except RequestFailed:
                 pass
             else:
-                payments.extend(parse_received_payments(payment_records))
+                payments.extend(parse_received_payments(payment_records, token_address=token))
         return payments
 
     def issue_payment(self, payment):

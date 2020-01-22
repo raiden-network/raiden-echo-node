@@ -75,7 +75,7 @@ expected_payments = {
 
 def test_parse_received_payments():
     records = loads(sample_data)
-    payments = parse_received_payments(records)
+    payments = parse_received_payments(records, token_address)
     assert set(payments) == expected_payments
 
 
@@ -88,16 +88,21 @@ def address_tokens_mock(no_address=False, no_tokens=False):
         if "/tokens" in url.path:
             if no_tokens:
                 return dict(status_code=404, content=dumps({"bla": "Not found"}))
-            return dict(status_code=200, content=dumps([make_address(9), make_address(10)]))
+            return dict(status_code=200, content=dumps([token_address, make_address(9)]))
     return all_requests(f)
 
 
-def payments_mock(raise_exception=False, status_code=200, content=None):
+def payments_mock(raise_exception=False, server_error=False):
     def f(url, request):
         assert "/payments" in url.path
         if raise_exception:
             raise RequestException()
-        return dict(status_code=status_code, content=content)
+        elif server_error:
+            return dict(status_code=500, content="Internal server error.")
+        elif token_address not in url.path:
+            return dict(status_code=200, content="[]")
+        else:
+            return dict(status_code=200, content=sample_data)
     return all_requests(f)
 
 
@@ -122,11 +127,11 @@ def test_get_payments():
         payments = raiden_bot.endpoint.get_payments()
         assert not payments
 
-    with HTTMock(payments_mock(status_code=500, content="Internal server error")):
+    with HTTMock(payments_mock(server_error=True)):
         payments = raiden_bot.endpoint.get_payments()
         assert not payments
 
-    with HTTMock(payments_mock(status_code=200, content=sample_data)):
+    with HTTMock(payments_mock()):
         payments = raiden_bot.endpoint.get_payments()
         assert set(payments) == expected_payments
 
