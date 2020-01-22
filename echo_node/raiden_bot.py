@@ -70,14 +70,12 @@ class RaidenEndpoint:
     def address(self):
         if self._address is None:
             self._address = request(self.url + "/api/v1/address", "our_address")
-            logging.info(f"Our Raiden address is {self._address}.")
         return self._address
 
     @property
     def tokens(self):
         if self._tokens is None:
             self._tokens = request(self.url + "/api/v1/tokens")
-            logging.info(f"Found {len(self._tokens)} registered tokens on the Raiden node.")
         return self._tokens
 
     def _get_payment_records_for_token(self, token):
@@ -146,9 +144,10 @@ class RaidenBot:
 
 def create_raiden_bot(raiden_url, logic_class):
     endpoint = RaidenEndpoint(url=raiden_url)
-    logic = get_logic(logic_class)
-    bot = RaidenBot(endpoint, logic)
+    bot = RaidenBot(endpoint, get_logic(logic_class))
 
-    logging.info(f"Bot successfully created with raiden url {raiden_url}.")
+    logging.info(f"Our raiden address is {endpoint.address}.")
+    logging.info(f"Found {len(endpoint.tokens)} registered tokens.")
+    logging.info(f"Bot successfully created with Raiden url {raiden_url}.")
 
     return bot
