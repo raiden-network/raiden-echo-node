@@ -18,26 +18,24 @@ def request(endpoint, field=None, **kwargs):
     try:
         response = get(endpoint, params=kwargs)
     except RequestException as exception:
-        logging.error(
+        raise RequestFailed(
             f"An exception occurred during the request to {endpoint}: {str(exception)}."
         )
-        raise RequestFailed()
 
     if response.status_code >= 400:
-        logging.error(
+        raise RequestFailed(
             f"Request to {endpoint} failed: {response.content} ({response.status_code})"
         )
-        raise RequestFailed()
 
     try:
         content = loads(response.content)
     except JSONDecodeError:
-        logging.error(f"Cannot proceed after request to {endpoint}: Invalid JSON in response.")
-        raise RequestFailed()
+        raise RequestFailed(
+            f"Cannot proceed after request to {endpoint}: Invalid JSON in response."
+        )
 
     if field is not None and field not in content:
-        logging.error(f"Invalid answer from query to {query} (no field named {field})")
-        raise RequestFailed()
+        raise RequestFailed(f"Invalid answer from query to {endpoint} (no field named {field})")
 
     return content[field] if field is not None else content
 
@@ -86,7 +84,10 @@ class RaidenEndpoint:
 
     def initialize(self):
         for token in self.tokens:
-            self._get_payment_records_for_token(token)
+            try:
+                self._get_payment_records_for_token(token)
+            except RequestFailed as e:
+                logging.warning(f"Failed request for payment events during init: {str(e)}")
         previous_payments = sum(self.token_to_payment_offset.values())
         logging.info(f"Initializing: skipped {previous_payments} previous payments.")
 
@@ -95,8 +96,8 @@ class RaidenEndpoint:
         for token in self.tokens:
             try:
                 payment_records = self._get_payment_records_for_token(token)
-            except RequestFailed:
-                pass
+            except RequestFailed as e:
+                logging.error(f"Failed request for payment events: {str(e)}")
             else:
                 payments.extend(parse_received_payments(payment_records, token_address=token))
         return payments
