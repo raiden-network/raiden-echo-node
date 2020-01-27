@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+
+  raiden:
+    image: raidennetwork/raiden:latest
+    volumes:
+      - "./raiden:/raiden"
+    entrypoint: "/opt/venv/bin/python3 -m raiden --config-file /raiden/config.toml"
+    ports:
+      - 5001:5001
+
+  echo_node:
+    build: .
+    depends_on:
+      - raiden
+    entrypoint: "python echo_node/cli.py --raiden-url http://raiden:5001 --timeout 180"
+

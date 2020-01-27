@@ -1,0 +1,21 @@
+# File paths
+keystore-path = '/raiden'
+password-file = '/raiden/password'
+datadir = "/raiden/data-dir"
+
+# Networking
+routing-mode = "local"
+api-address = "0.0.0.0:5001"
+## Specify a network id (ropsten, rinkeby, goerli) with matching
+## Ethereum endpoint
+# eth-rpc-endpoint =
+# network-id =
+
+# Misc
+environment-type = "development"
+accept-disclaimer = true
+## Insert the Ethereum address matching your keystore file here
+# address = 
+
+[log-config]
+"raiden" = "ERROR"
