@@ -9,6 +9,11 @@ services:
     entrypoint: "/opt/venv/bin/python3 -m raiden --config-file /raiden/config.toml"
     ports:
       - 5001:5001
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5001/api/v1/address"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
 
   echo_node:
     build: .
