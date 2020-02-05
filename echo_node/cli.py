@@ -8,13 +8,13 @@ from logic import logic_choices
 from raiden_bot import RequestFailed, create_raiden_bot
 
 
-def start_bot(url, logic, timeout):
+def start_bot(url, logic, timeout, token):
     if timeout > 0:
         logging.info(f"Trying to connect to Raiden node at {url}. Timeout: {timeout} seconds")
     fail_reason = None
     while timeout >= 0:
         try:
-            return create_raiden_bot(url, logic)
+            return create_raiden_bot(url, logic, token)
         except (RequestFailed, RuntimeError) as e:
             fail_reason = str(e)
         sleep(min(timeout, 5.0))
@@ -37,7 +37,10 @@ def start_bot(url, logic, timeout):
     default=0,
     help="Seconds to wait for the Raiden API to become available before aborting."
 )
-def main(raiden_url, logic, timeout):
+@option(
+    "--single-token", type=str, default=None, help="Token to restrict the node to"
+)
+def main(raiden_url, logic, timeout, single_token):
     """
     Run a bot on top of a Raiden node. It polls the Raiden node for incoming
     payments and reacts in the way specified with the --logic option.
@@ -46,7 +49,7 @@ def main(raiden_url, logic, timeout):
     node into an echo node (see Raiden docs for further information).
     """
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    start_bot(raiden_url, logic, timeout).loop()
+    start_bot(raiden_url, logic, timeout, single_token).loop()
 
 
 if __name__ == "__main__":

@@ -57,8 +57,9 @@ def parse_received_payments(records, token_address):
 
 
 class RaidenEndpoint:
-    def __init__(self, url):
+    def __init__(self, url, single_token=None):
         self.url = url
+        self.single_token = single_token
         self._tokens = None
         self._address = None
         self.identifier = count(start=1)
@@ -74,6 +75,11 @@ class RaidenEndpoint:
     def tokens(self):
         if self._tokens is None:
             self._tokens = request(self.url + "/api/v1/tokens")
+            if self.single_token is not None:
+                if self.single_token not in self._tokens:
+                    raise RuntimeError(f"Specified token {self.single_token} not registered.")
+                else:
+                    self._tokens = [self.single_token]
         return self._tokens
 
     def _get_payment_records_for_token(self, token):
@@ -143,11 +149,13 @@ class RaidenBot:
             sleep(self.poll_interval)
 
 
-def create_raiden_bot(raiden_url, logic_class):
-    endpoint = RaidenEndpoint(url=raiden_url)
+def create_raiden_bot(raiden_url, logic_class, token):
+    endpoint = RaidenEndpoint(url=raiden_url, single_token=token)
     bot = RaidenBot(endpoint, get_logic(logic_class))
 
     logging.info(f"Our raiden address is {endpoint.address}.")
+    if(endpoint.single_token):
+        logging.info(f"Restricted to single token {endpoint.single_token}.")
     logging.info(f"Found {len(endpoint.tokens)} registered tokens.")
     logging.info(f"Bot successfully created with Raiden url {raiden_url}.")
 
