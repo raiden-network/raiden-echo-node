@@ -23,3 +23,6 @@ node, network and account in the `raiden/` directory:
   - Save the password of the account there, in a file named `password`
   - Create a `config.toml` from the `config-template.toml` and fill
     in the account's address, the network id and the url of the node.
+
+If the bot should only work on a single token, enter the token address
+in `config-docker.toml` as well.

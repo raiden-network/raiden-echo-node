@@ -1,0 +1,7 @@
+raiden_url = "http://raiden:5001"
+timeout = 180
+
+## Enter a token address here to run the bot for a single token only.
+## With some older versions of Raiden this may be necessary, see
+## issue 1 in the raiden-echo-node repo.
+# single_token =

@@ -19,5 +19,3 @@ services:
     build: .
     depends_on:
       - raiden
-    entrypoint: "python echo_node/cli.py --raiden-url http://raiden:5001 --timeout 180"
-
