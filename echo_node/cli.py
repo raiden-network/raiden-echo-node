@@ -3,6 +3,7 @@ from sys import exit
 from time import sleep
 
 from click import Choice, IntRange, command, option
+from click_config_file import configuration_option
 
 from logic import logic_choices
 from raiden_bot import RequestFailed, create_raiden_bot
@@ -40,6 +41,7 @@ def start_bot(url, logic, timeout, token):
 @option(
     "--single-token", type=str, default=None, help="Token to restrict the node to"
 )
+@configuration_option()
 def main(raiden_url, logic, timeout, single_token):
     """
     Run a bot on top of a Raiden node. It polls the Raiden node for incoming
