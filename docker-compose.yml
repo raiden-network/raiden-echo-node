@@ -3,7 +3,7 @@ version: "3"
 services:
 
   raiden:
-    image: raidennetwork/raiden:latest
+    image: raidennetwork/raiden:nightly
     volumes:
       - "./raiden:/raiden"
     entrypoint: "/opt/venv/bin/python3 -m raiden --config-file /raiden/config.toml"
